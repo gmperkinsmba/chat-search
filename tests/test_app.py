@@ -1,4 +1,6 @@
 import importlib.util
+import contextlib
+import io
 import json
 import os
 import tempfile
@@ -6,6 +8,7 @@ import threading
 import unittest
 from http.client import HTTPConnection
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 TMP=tempfile.TemporaryDirectory();os.environ['EVIDENCE_NOTEBOOK_DATA']=TMP.name
 spec=importlib.util.spec_from_file_location('evidence_app',Path(__file__).parents[1]/'server.py')
@@ -105,5 +108,21 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(self.request('POST','/api/preview',payload,origin='https://outside.invalid')[0],403)
         self.assertEqual(self.request('GET','/',host='outside.invalid')[0],403)
         self.assertIn("'&lt;'",app.APPJS);self.assertIn("'&#39;'",app.APPJS)
+
+    def test_search_query_is_not_written_to_access_logs(self):
+        secret='distinctive-private-search-phrase'
+        captured=io.StringIO()
+        with contextlib.redirect_stderr(captured):
+            status,_=self.request('GET','/api/search?q='+secret)
+        self.assertEqual(status,200)
+        self.assertNotIn(secret,captured.getvalue())
+
+    def test_database_connection_closes_when_setup_fails(self):
+        connection=Mock()
+        connection.execute.side_effect=RuntimeError('injected setup failure')
+        with patch.object(app,'prepare_database'), patch.object(app.sqlite3,'connect',return_value=connection):
+            with self.assertRaisesRegex(RuntimeError,'injected setup failure'):
+                app.database()
+        connection.close.assert_called_once_with()
 
 if __name__=='__main__':unittest.main()

@@ -13,23 +13,29 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from desktop_server import make_server as _make_desktop_server
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+from runtime_security import ensure_private_directory, prepare_database, verify_database
 
 ROOT=Path(__file__).resolve().parent
 DATA=Path(os.environ.get('EVIDENCE_NOTEBOOK_DATA',Path.home()/'.local/share/evidence-notebook'))
-DATA.mkdir(mode=0o700,parents=True,exist_ok=True)
-try: DATA.chmod(0o700)
-except OSError: pass
+ensure_private_directory(DATA)
 DB=DATA/'notebook.sqlite3'
 TOKEN=secrets.token_urlsafe(24)
 MAX_BYTES=5_000_000
 PENDING={}
 
 def database():
-    db=sqlite3.connect(DB);db.row_factory=sqlite3.Row;db.execute('PRAGMA foreign_keys=ON');db.execute('PRAGMA journal_mode=WAL')
-    db.execute('CREATE TABLE IF NOT EXISTS sources (id TEXT PRIMARY KEY, name TEXT NOT NULL, format TEXT NOT NULL, digest TEXT NOT NULL UNIQUE, imported_at TEXT NOT NULL)')
-    db.execute('CREATE TABLE IF NOT EXISTS records (id TEXT PRIMARY KEY, source_id TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE, record_no INTEGER NOT NULL, conversation TEXT NOT NULL, speaker TEXT NOT NULL, stamp TEXT NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, start_offset INTEGER NOT NULL, end_offset INTEGER NOT NULL, offset_unit TEXT NOT NULL DEFAULT "unicode code points", reference TEXT NOT NULL)')
-    db.execute('CREATE VIRTUAL TABLE IF NOT EXISTS record_search USING fts5(record_id UNINDEXED, source_id UNINDEXED, content, speaker, conversation)')
-    return db
+    prepare_database(DB)
+    db=sqlite3.connect(DB)
+    try:
+        db.row_factory=sqlite3.Row;db.execute('PRAGMA foreign_keys=ON');db.execute('PRAGMA journal_mode=WAL')
+        verify_database(DB)
+        db.execute('CREATE TABLE IF NOT EXISTS sources (id TEXT PRIMARY KEY, name TEXT NOT NULL, format TEXT NOT NULL, digest TEXT NOT NULL UNIQUE, imported_at TEXT NOT NULL)')
+        db.execute('CREATE TABLE IF NOT EXISTS records (id TEXT PRIMARY KEY, source_id TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE, record_no INTEGER NOT NULL, conversation TEXT NOT NULL, speaker TEXT NOT NULL, stamp TEXT NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, start_offset INTEGER NOT NULL, end_offset INTEGER NOT NULL, offset_unit TEXT NOT NULL DEFAULT "unicode code points", reference TEXT NOT NULL)')
+        db.execute('CREATE VIRTUAL TABLE IF NOT EXISTS record_search USING fts5(record_id UNINDEXED, source_id UNINDEXED, content, speaker, conversation)')
+        return db
+    except BaseException:
+        db.close()
+        raise
 
 def text_value(value):
     if value is None:return ''
@@ -171,7 +177,9 @@ class Handler(BaseHTTPRequestHandler):
     def setup(self):
         super().setup()
         self.connection.settimeout(10)
-    def log_message(self,fmt,*args):super().log_message(fmt,*args)
+    def log_message(self,fmt,*args):
+        # Request targets can contain search terms in query parameters.
+        return
     def safe(self):return self.headers.get('Host','') in (f'127.0.0.1:{self.server.server_port}',f'localhost:{self.server.server_port}')
     def send(self,status,data=b'',ctype='application/json; charset=utf-8'):
         self.send_response(status);self.send_header('Content-Type',ctype);self.send_header('X-Content-Type-Options','nosniff');self.send_header('Cache-Control','no-store');self.send_header('Content-Security-Policy',"default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");self.send_header('Referrer-Policy','no-referrer');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
