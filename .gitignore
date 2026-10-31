@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.sqlite*
+*.db
+*.jsonl
+*.log
+.env
+secrets*
+uploads/
+exports/
+venv/
+.venv/
+build/
+dist/
+graphify-out/
