@@ -1,1 +1,1 @@
-"""Acceptance checks for Evidence Notebook."""
+"""Acceptance checks for Chat Search."""

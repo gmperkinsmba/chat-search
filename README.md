@@ -1,6 +1,6 @@
-# Evidence Notebook
+# Chat Search
 
-Search local conversation exports. Open the exact source message behind each result. Preview imports, redact selected fields, then save them to a local notebook.
+Search saved chats and open the source message behind each result.
 
 The Mac app starts with an empty notebook. Browser development mode includes a labeled synthetic sample. It has overlapping launch-date statements and a later correction. Use it to try search and source inspection. The data is fictional.
 
@@ -15,7 +15,7 @@ python3.12 -m venv .desktop-venv
 .desktop-venv/bin/python install_desktop.py
 ```
 
-Then open `~/Applications/Evidence Notebook.app` in Finder. Use File → Quit Evidence Notebook or close the window to stop the local listener. To remove only the marked app copy, run `.desktop-venv/bin/python uninstall_desktop.py`. The SQLite notebook remains in `~/.local/share/evidence-notebook` until its sources are deleted in Settings.
+Then open `~/Applications/Chat Search.app` in Finder. Use File → Quit Chat Search or close the window to stop the local listener. To remove only the marked app copy, run `.desktop-venv/bin/python uninstall_desktop.py`. The SQLite notebook remains in `~/.local/share/evidence-notebook` until its sources are deleted in Settings.
 
 ## Browser development
 
@@ -59,3 +59,5 @@ Tests cover all four adapters, stable offsets, redaction, duplicate imports, and
 MIT. See [LICENSE](LICENSE).
 
 For browser development, use the command and local address above. The native app targets macOS; other operating systems have not been tested.
+
+The app is now named Chat Search. Existing local data remains in `~/.local/share/evidence-notebook`.
