@@ -10,6 +10,7 @@ import secrets
 import sqlite3
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from desktop_server import make_server as _make_desktop_server
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
@@ -167,6 +168,9 @@ APPJS += r'''row=function(r){return `<button type="button" class="result" data-i
 
 class Handler(BaseHTTPRequestHandler):
     server_version='EvidenceNotebook/1.0'
+    def setup(self):
+        super().setup()
+        self.connection.settimeout(10)
     def log_message(self,fmt,*args):super().log_message(fmt,*args)
     def safe(self):return self.headers.get('Host','') in (f'127.0.0.1:{self.server.server_port}',f'localhost:{self.server.server_port}')
     def send(self,status,data=b'',ctype='application/json; charset=utf-8'):
@@ -184,7 +188,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.safe():return self.send(403,b'Forbidden','text/plain')
         path=urlparse(self.path).path
-        if path=='/':return self.send(200,HTML.replace('<div id="sourceBody" class="source-body">','<button id="deleteSource" class="danger" type="button" disabled>Delete selected source</button><div id="sourceBody" class="source-body">').encode(),'text/html; charset=utf-8')
+        if path=='/':
+            page=HTML.replace('<div id="sourceBody" class="source-body">','<button id="deleteSource" class="danger" type="button" disabled>Delete selected source</button><div id="sourceBody" class="source-body">')
+            if 'desktop=1' in self.path:page=page.replace('</head>','<link rel="stylesheet" href="/desktop.css"></head>')
+            return self.send(200,page.encode(),'text/html; charset=utf-8')
+        if path=='/desktop.css':return self.send(200,(ROOT/'desktop.css').read_bytes(),'text/css; charset=utf-8')
         if path=='/style.css':return self.send(200,CSS.encode(),'text/css; charset=utf-8')
         if path=='/app.js':return self.send(200,APPJS.replace('TOKEN_PLACEHOLDER',json.dumps(TOKEN)).encode(),'application/javascript; charset=utf-8')
         if path=='/api/sources':
@@ -241,8 +249,11 @@ class Handler(BaseHTTPRequestHandler):
         if not cur:db.close();return self.json(404,{'error':'Source not found.'})
         db.execute('DELETE FROM record_search WHERE source_id=?',(m.group(1),));db.execute('DELETE FROM sources WHERE id=?',(m.group(1),));db.commit();db.close();return self.send(204)
 
+def make_server(port=0):
+    return _make_desktop_server(Handler, port=port)
+
 def run(port=8345):
-    seed();server=ThreadingHTTPServer(('127.0.0.1',port),Handler);server.daemon_threads=True;print(f'Evidence Notebook listening at http://127.0.0.1:{port}',flush=True);server.serve_forever()
+    seed();server=make_server(port=port);print(f'Evidence Notebook listening at http://127.0.0.1:{server.server_port}',flush=True);server.serve_forever()
 if __name__=='__main__':
     import argparse
     p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=8345);run(p.parse_args().port)

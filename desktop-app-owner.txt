@@ -1,0 +1,3 @@
+Evidence Notebook desktop bundle
+io.github.gmperkinsmba.evidence-notebook
+local-build-owner-marker-v1

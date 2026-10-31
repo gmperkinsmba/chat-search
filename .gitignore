@@ -13,3 +13,7 @@ venv/
 build/
 dist/
 graphify-out/
+.desktop-venv/
+*.app
+*.spec
+*.previous-*
