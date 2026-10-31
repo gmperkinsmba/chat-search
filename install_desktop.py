@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install only an owned Evidence Notebook bundle without deleting prior copies."""
+"""Install only an owned Chat Search bundle without deleting prior copies."""
 from __future__ import annotations
 
 import plistlib

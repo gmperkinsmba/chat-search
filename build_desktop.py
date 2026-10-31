@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a local macOS Evidence Notebook application bundle."""
+"""Build a local macOS Chat Search application bundle."""
 from __future__ import annotations
 
 import plistlib
@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
-APP_NAME = "Evidence Notebook"
+APP_NAME = "Chat Search"
 ASSET_MANIFEST = ROOT / "desktop-assets.txt"
 OWNER_MARKER = ROOT / "desktop-app-owner.txt"
 BUNDLE_ID = "io.github.gmperkinsmba.evidence-notebook"
@@ -54,7 +54,7 @@ def main() -> int:
         destination.parent.mkdir(exist_ok=True)
         if destination.exists():
             if not owned_bundle(destination):
-                raise SystemExit(f"Refusing to replace an app without the Evidence Notebook ownership marker: {destination}")
+                raise SystemExit(f"Refusing to replace an app without the Chat Search ownership marker: {destination}")
             backup_owned_bundle(destination)
         shutil.move(str(build_root / "dist" / f"{APP_NAME}.app"), str(destination))
     print(ROOT / "dist" / f"{APP_NAME}.app")
@@ -109,7 +109,7 @@ def write_notices(destination: Path) -> None:
     if python_license is None:
         raise SystemExit("The Python runtime license text is missing or unreadable.")
     chunks = [
-        "Evidence Notebook desktop dependencies\n\nThird-party license texts for the pinned build environment follow.\n",
+        "Chat Search desktop dependencies\n\nThird-party license texts for the pinned build environment follow.\n",
         f"\n{'=' * 72}\nPython runtime {python_version}\n{'=' * 72}\n{python_license}\n",
     ]
     for distribution in sorted(importlib.metadata.distributions(), key=lambda item: (item.metadata.get("Name") or "").lower()):

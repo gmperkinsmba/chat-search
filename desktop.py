@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Native macOS shell for Evidence Notebook."""
+"""Native macOS shell for Chat Search."""
 from __future__ import annotations
 
 import threading
@@ -21,12 +21,12 @@ def run() -> None:
         if window is not None:
             window.destroy()
 
-    menu = [Menu("File", [MenuAction("Quit Evidence Notebook", quit_app)])]
+    menu = [Menu("File", [MenuAction("Quit Chat Search", quit_app)])]
     try:
         worker.start()
         started = True
         install_policy(origin)
-        window = webview.create_window("Evidence Notebook", origin + "/?desktop=1", width=1120, height=760, min_size=(760, 560), menu=menu)
+        window = webview.create_window("Chat Search", origin + "/?desktop=1", width=1120, height=760, min_size=(760, 560), menu=menu)
         webview.start()
     finally:
         if started:
@@ -43,8 +43,8 @@ if __name__ == "__main__":
         import AppKit
 
         alert = AppKit.NSAlert.alloc().init()
-        alert.setMessageText_("Evidence Notebook could not start")
-        alert.setInformativeText_("The local app failed to open. Restart Evidence Notebook and try again.")
+        alert.setMessageText_("Chat Search could not start")
+        alert.setInformativeText_("The local app failed to open. Restart Chat Search and try again.")
         alert.addButtonWithTitle_("OK")
         alert.runModal()
         raise SystemExit(1)
